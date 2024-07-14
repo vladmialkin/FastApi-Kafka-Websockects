@@ -2,7 +2,7 @@ from datetime import datetime
 import pytest
 
 from app.domain.entities.messages import Message, Chat
-from app.domain.exceptions.messages import TitleTooLongException, EmptyTextException
+from app.domain.exceptions.messages import TitleTooLongException
 from app.domain.values.messages import Text, Title
 
 
