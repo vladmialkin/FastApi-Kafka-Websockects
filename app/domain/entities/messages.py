@@ -1,35 +1,28 @@
-from uuid import uuid4
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.domain.values.messages import Text, Title
+from app.domain.entities.base import BaseEntity
+from app.domain.events.messages import NewMessageReceivedEvent
 
 
-@dataclass
-class Message:
-    oid: str = field(
-        default_factory=lambda: str(uuid4()),
-        kw_only=True,
-    )
+@dataclass(eq=False)
+class Message(BaseEntity):
     created_at: datetime = field(
         default_factory=datetime.now,
         kw_only=True,
     )
     text: Text
 
-    def __hash__(self) -> int:
-        return hash(self.oid)
+    def pull_events(self):
+        registered_events = copy(self._events)
+        self._events.clear()
 
-    def __eq__(self, __value: 'Message') -> bool:
-        return self.oid == __value.oid
+        return registered_events
 
 
-@dataclass
-class Chat:
-    oid: str = field(
-        default_factory=lambda: str(uuid4()),
-        kw_only=True,
-    )
+@dataclass(eq=False)
+class Chat(BaseEntity):
     created_at: datetime = field(
         default_factory=datetime.now,
         kw_only=True,
@@ -40,11 +33,10 @@ class Chat:
         kw_only=True,
     )
 
-    def __hash__(self) -> int:
-        return hash(self.oid)
-
-    def __eq__(self, __value: 'Chat') -> bool:
-        return self.oid == __value.oid
-
     def add_message(self, message: Message):
         self.messages.add(message)
+        self.register_event(NewMessageReceivedEvent(
+            message_text=message.text.as_generic_type(),
+            chat_oid=self.oid,
+            message_oid=message.oid,
+        ))
